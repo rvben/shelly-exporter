@@ -3,9 +3,15 @@ name = "shelly-exporter"
 version = "0.1.1"
 edition = "2024"
 authors = ["Ruben J. Jongejan <ruben.jongejan@gmail.com>"]
-description = "Prometheus exporter for Shelly Gen2 devices"
+description = "Prometheus exporter for Shelly smart home devices"
 license = "MIT"
 repository = "https://github.com/rvben/shelly-exporter"
+homepage = "https://github.com/rvben/shelly-exporter"
+documentation = "https://docs.rs/shelly-exporter"
+keywords = ["prometheus", "exporter", "shelly", "iot", "smart-home"]
+categories = ["command-line-utilities", "web-programming"]
+readme = "README.md"
+exclude = ["target/", ".github/", "*.md"]
 
 [dependencies]
 # Async runtime

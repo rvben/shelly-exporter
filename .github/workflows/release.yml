@@ -122,10 +122,31 @@ jobs:
         tar -czf dist/shelly-exporter-x86_64-linux.tar.gz -C target/x86_64-unknown-linux-musl/release shelly-exporter
         tar -czf dist/shelly-exporter-aarch64-linux.tar.gz -C target/aarch64-unknown-linux-musl/release shelly-exporter
     
+    - name: Extract changelog content
+      id: changelog
+      run: |
+        VERSION=${GITHUB_REF_NAME#v}
+        # Extract the changelog section for this version
+        awk -v ver="[$VERSION]" '
+          $0 ~ "## \\[" ver "\\]" { found=1; next }
+          found && /^## \[/ { exit }
+          found && !/^$/ { print }
+        ' CHANGELOG.md > release_notes.md
+        
+        # If no specific version found, use unreleased section
+        if [ ! -s release_notes.md ]; then
+          awk '
+            /^## \[Unreleased\]/ { found=1; next }
+            found && /^## \[/ { exit }
+            found && !/^$/ { print }
+          ' CHANGELOG.md > release_notes.md
+        fi
+    
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         files: dist/*
+        body_path: release_notes.md
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
