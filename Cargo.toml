@@ -1,0 +1,49 @@
+[package]
+name = "shelly-exporter"
+version = "0.1.0"
+edition = "2024"
+authors = ["Ruben J. Jongejan <ruben.jongejan@gmail.com>"]
+description = "Prometheus exporter for Shelly Gen2 devices"
+license = "MIT"
+repository = "https://github.com/rvben/shelly-exporter"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.45", features = ["full"] }
+
+# Web framework for metrics endpoint
+axum = "0.8"
+
+# HTTP client for Shelly API
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Prometheus metrics
+prometheus = "0.14"
+
+# JSON serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# CLI argument parsing
+clap = { version = "4.5", features = ["derive", "env"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Time handling
+chrono = "0.4"
+
+# mDNS discovery
+mdns = "3.0"
+
+[dev-dependencies]
+# HTTP testing
+tower = "0.5"
+hyper = "1.0"
+tower-service = "0.3"
+wiremock = "0.6"
