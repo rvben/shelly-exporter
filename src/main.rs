@@ -7,9 +7,9 @@ use axum::{Router, routing::get};
 use clap::Parser;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{RwLock, Mutex};
+use tokio::sync::{Mutex, RwLock};
 use tokio::time::interval;
-use tracing::{error, info, warn, debug};
+use tracing::{debug, error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::config::Config;
@@ -44,7 +44,7 @@ async fn main() -> Result<()> {
 
     // Initialize device clients
     let device_clients: DeviceClients = Arc::new(Mutex::new(HashMap::new()));
-    
+
     // Setup initial devices
     for (host, name) in config.get_device_names() {
         match setup_device_client(&host, &config).await {
@@ -71,7 +71,7 @@ async fn main() -> Result<()> {
 
         loop {
             interval.tick().await;
-            
+
             let clients = poll_clients.lock().await;
             for (host, (client, device_name, model)) in clients.iter() {
                 let generation = match client.generation {
@@ -81,8 +81,11 @@ async fn main() -> Result<()> {
 
                 match client.get_status().await {
                     Ok(status) => {
-                        debug!("Successfully fetched status from {} ({})", device_name, host);
-                        
+                        debug!(
+                            "Successfully fetched status from {} ({})",
+                            device_name, host
+                        );
+
                         if let Err(e) = poll_metrics.update_device(
                             device_name,
                             host,
@@ -95,12 +98,15 @@ async fn main() -> Result<()> {
                         }
                     }
                     Err(e) => {
-                        warn!("Failed to fetch status from {} ({}): {}", device_name, host, e);
+                        warn!(
+                            "Failed to fetch status from {} ({}): {}",
+                            device_name, host, e
+                        );
                         poll_metrics.mark_device_down(device_name, host, model, generation);
                     }
                 }
             }
-            
+
             drop(clients);
 
             // Gather all metrics
@@ -121,20 +127,23 @@ async fn main() -> Result<()> {
         let discovery_interval = config.discovery_interval_duration();
         let discovery_clients = device_clients.clone();
         let discovery_config = config.clone();
-        
+
         tokio::spawn(async move {
             let mut interval = interval(discovery_interval);
-            
+
             loop {
                 interval.tick().await;
                 info!("Running device discovery...");
-                
-                match ShellyClient::discover_devices(discovery_config.http_timeout_duration()).await {
+
+                match ShellyClient::discover_devices(discovery_config.http_timeout_duration()).await
+                {
                     Ok(discovered) => {
                         info!("Discovered {} devices", discovered.len());
                         for device_url in discovered {
                             let mut clients = discovery_clients.lock().await;
-                            if !clients.contains_key(&device_url) {
+                            if let std::collections::hash_map::Entry::Vacant(e) =
+                                clients.entry(device_url.clone())
+                            {
                                 match setup_device_client(&device_url, &discovery_config).await {
                                     Ok((client, model)) => {
                                         let name = device_url
@@ -144,11 +153,17 @@ async fn main() -> Result<()> {
                                             .next()
                                             .unwrap_or("unknown")
                                             .to_string();
-                                        info!("Added discovered device: {} ({}) at {}", name, model, device_url);
-                                        clients.insert(device_url, (client, name, model));
+                                        info!(
+                                            "Added discovered device: {} ({}) at {}",
+                                            name, model, device_url
+                                        );
+                                        e.insert((client, name, model));
                                     }
                                     Err(e) => {
-                                        warn!("Failed to setup discovered device at {}: {}", device_url, e);
+                                        warn!(
+                                            "Failed to setup discovered device at {}: {}",
+                                            device_url, e
+                                        );
                                     }
                                 }
                             }
@@ -181,13 +196,13 @@ async fn main() -> Result<()> {
 async fn setup_device_client(host: &str, config: &Config) -> Result<(ShellyClient, String)> {
     let timeout = config.http_timeout_duration();
     let auth = config.auth();
-    
+
     // Detect device generation
     let generation = ShellyClient::detect_generation(host, timeout, auth.clone()).await?;
-    
+
     // Create client
     let client = ShellyClient::new(host.to_string(), timeout, auth, generation)?;
-    
+
     // Get device info for model
     let model = if generation == ShellyGeneration::Gen2 {
         match client.get_device_info().await {
@@ -198,7 +213,7 @@ async fn setup_device_client(host: &str, config: &Config) -> Result<(ShellyClien
         // Gen1 devices don't have a unified device info endpoint
         "Shelly Gen1".to_string()
     };
-    
+
     Ok((client, model))
 }
 

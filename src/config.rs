@@ -74,7 +74,7 @@ impl Config {
 
     pub fn get_device_names(&self) -> Vec<(String, String)> {
         let mut result = Vec::new();
-        
+
         for (idx, host) in self.hosts.iter().enumerate() {
             let name = if let Some(names) = &self.names {
                 names.get(idx).cloned().unwrap_or_else(|| {
@@ -95,10 +95,10 @@ impl Config {
                     .unwrap_or("unknown")
                     .to_string()
             };
-            
+
             result.push((host.clone(), name));
         }
-        
+
         result
     }
 }
@@ -144,7 +144,10 @@ mod tests {
 
         assert_eq!(config.poll_interval_duration(), Duration::from_secs(45));
         assert_eq!(config.http_timeout_duration(), Duration::from_secs(15));
-        assert_eq!(config.discovery_interval_duration(), Duration::from_secs(600));
+        assert_eq!(
+            config.discovery_interval_duration(),
+            Duration::from_secs(600)
+        );
     }
 
     #[test]
@@ -206,8 +209,20 @@ mod tests {
 
         let names = config_with_names.get_device_names();
         assert_eq!(names.len(), 2);
-        assert_eq!(names[0], ("http://192.168.1.100".to_string(), "Living Room".to_string()));
-        assert_eq!(names[1], ("http://192.168.1.101:8080".to_string(), "Kitchen".to_string()));
+        assert_eq!(
+            names[0],
+            (
+                "http://192.168.1.100".to_string(),
+                "Living Room".to_string()
+            )
+        );
+        assert_eq!(
+            names[1],
+            (
+                "http://192.168.1.101:8080".to_string(),
+                "Kitchen".to_string()
+            )
+        );
 
         let config_without_names = Config {
             hosts: vec![
@@ -228,8 +243,20 @@ mod tests {
 
         let names = config_without_names.get_device_names();
         assert_eq!(names.len(), 2);
-        assert_eq!(names[0], ("http://192.168.1.100".to_string(), "192.168.1.100".to_string()));
-        assert_eq!(names[1], ("https://shelly.local".to_string(), "shelly.local".to_string()));
+        assert_eq!(
+            names[0],
+            (
+                "http://192.168.1.100".to_string(),
+                "192.168.1.100".to_string()
+            )
+        );
+        assert_eq!(
+            names[1],
+            (
+                "https://shelly.local".to_string(),
+                "shelly.local".to_string()
+            )
+        );
     }
 
     #[test]
@@ -254,8 +281,23 @@ mod tests {
 
         let names = config.get_device_names();
         assert_eq!(names.len(), 3);
-        assert_eq!(names[0], ("http://192.168.1.100".to_string(), "Living Room".to_string()));
-        assert_eq!(names[1], ("http://192.168.1.101".to_string(), "Kitchen".to_string()));
-        assert_eq!(names[2], ("http://192.168.1.102".to_string(), "192.168.1.102".to_string()));
+        assert_eq!(
+            names[0],
+            (
+                "http://192.168.1.100".to_string(),
+                "Living Room".to_string()
+            )
+        );
+        assert_eq!(
+            names[1],
+            ("http://192.168.1.101".to_string(), "Kitchen".to_string())
+        );
+        assert_eq!(
+            names[2],
+            (
+                "http://192.168.1.102".to_string(),
+                "192.168.1.102".to_string()
+            )
+        );
     }
 }

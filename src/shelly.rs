@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -88,8 +88,8 @@ pub struct UpdateStatus {
 // Unified status enum
 #[derive(Debug)]
 pub enum ShellyStatus {
-    Gen1(ShellyGen1Status),
-    Gen2(ShellyGen2Status),
+    Gen1(Box<ShellyGen1Status>),
+    Gen2(Box<ShellyGen2Status>),
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -193,7 +193,12 @@ struct RpcError {
 }
 
 impl ShellyClient {
-    pub fn new(base_url: String, timeout: Duration, auth: Option<(String, String)>, generation: ShellyGeneration) -> Result<Self> {
+    pub fn new(
+        base_url: String,
+        timeout: Duration,
+        auth: Option<(String, String)>,
+        generation: ShellyGeneration,
+    ) -> Result<Self> {
         let client = Client::builder()
             .timeout(timeout)
             .build()
@@ -207,16 +212,20 @@ impl ShellyClient {
         })
     }
 
-    pub async fn detect_generation(base_url: &str, timeout: Duration, auth: Option<(String, String)>) -> Result<ShellyGeneration> {
+    pub async fn detect_generation(
+        base_url: &str,
+        timeout: Duration,
+        auth: Option<(String, String)>,
+    ) -> Result<ShellyGeneration> {
         let client = Client::builder()
             .timeout(timeout)
             .build()
             .map_err(|e| anyhow!("Failed to create HTTP client: {}", e))?;
 
         // Try Gen2 endpoint first
-        let gen2_url = format!("{}/rpc/Shelly.GetDeviceInfo", base_url);
+        let gen2_url = format!("{base_url}/rpc/Shelly.GetDeviceInfo");
         let mut request = client.get(&gen2_url);
-        
+
         if let Some((username, password)) = &auth {
             request = request.basic_auth(username, Some(password));
         }
@@ -229,9 +238,9 @@ impl ShellyClient {
         }
 
         // Try Gen1 endpoint
-        let gen1_url = format!("{}/settings", base_url);
+        let gen1_url = format!("{base_url}/settings");
         let mut request = client.get(&gen1_url);
-        
+
         if let Some((username, password)) = &auth {
             request = request.basic_auth(username, Some(password));
         }
@@ -243,7 +252,10 @@ impl ShellyClient {
             }
         }
 
-        Err(anyhow!("Failed to detect Shelly generation for {}", base_url))
+        Err(anyhow!(
+            "Failed to detect Shelly generation for {}",
+            base_url
+        ))
     }
 
     pub async fn get_device_info(&self) -> Result<DeviceInfo> {
@@ -251,7 +263,7 @@ impl ShellyClient {
         debug!("Fetching device info from: {}", url);
 
         let mut request = self.client.get(&url);
-        
+
         if let Some((username, password)) = &self.auth {
             request = request.basic_auth(username, Some(password));
         }
@@ -289,7 +301,7 @@ impl ShellyClient {
         debug!("Fetching Gen2 status from: {}", url);
 
         let mut request = self.client.get(&url);
-        
+
         if let Some((username, password)) = &self.auth {
             request = request.basic_auth(username, Some(password));
         }
@@ -312,7 +324,7 @@ impl ShellyClient {
             .map_err(|e| anyhow!("Failed to parse Gen2 status: {}", e))?;
 
         debug!("Gen2 status fetched successfully");
-        Ok(ShellyStatus::Gen2(status))
+        Ok(ShellyStatus::Gen2(Box::new(status)))
     }
 
     async fn get_gen1_status(&self) -> Result<ShellyStatus> {
@@ -320,7 +332,7 @@ impl ShellyClient {
         debug!("Fetching Gen1 status from: {}", url);
 
         let mut request = self.client.get(&url);
-        
+
         if let Some((username, password)) = &self.auth {
             request = request.basic_auth(username, Some(password));
         }
@@ -343,16 +355,16 @@ impl ShellyClient {
             .map_err(|e| anyhow!("Failed to parse Gen1 status: {}", e))?;
 
         debug!("Gen1 status fetched successfully");
-        Ok(ShellyStatus::Gen1(status))
+        Ok(ShellyStatus::Gen1(Box::new(status)))
     }
 
     pub async fn discover_devices(_timeout: Duration) -> Result<Vec<String>> {
         info!("Starting mDNS discovery for Shelly devices...");
         let devices = Vec::new();
-        
+
         // Note: mDNS discovery would be implemented here
         // For now, we'll return an empty list and rely on manually configured devices
-        
+
         Ok(devices)
     }
 }
@@ -360,12 +372,15 @@ impl ShellyClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use wiremock::{matchers::{method, path}, Mock, MockServer, ResponseTemplate};
+    use wiremock::{
+        Mock, MockServer, ResponseTemplate,
+        matchers::{method, path},
+    };
 
     #[tokio::test]
     async fn test_get_device_info() {
         let mock_server = MockServer::start().await;
-        
+
         let device_info_response = r#"{
             "name": "Test Shelly",
             "id": "shelly1-123456",
@@ -390,7 +405,8 @@ mod tests {
             Duration::from_secs(5),
             None,
             ShellyGeneration::Gen2,
-        ).unwrap();
+        )
+        .unwrap();
 
         let info = client.get_device_info().await.unwrap();
         assert_eq!(info.name, "Test Shelly");
@@ -401,7 +417,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_status() {
         let mock_server = MockServer::start().await;
-        
+
         let status_response = r#"{
             "switch:0": {
                 "id": 0,
@@ -454,10 +470,11 @@ mod tests {
             Duration::from_secs(5),
             None,
             ShellyGeneration::Gen2,
-        ).unwrap();
+        )
+        .unwrap();
 
         let status = client.get_status().await.unwrap();
-        
+
         match status {
             ShellyStatus::Gen2(gen2_status) => {
                 assert!(gen2_status.switch_0.is_some());
@@ -465,11 +482,11 @@ mod tests {
                 assert_eq!(switch.output, true);
                 assert_eq!(switch.apower, Some(15.5));
                 assert_eq!(switch.voltage, Some(230.1));
-                
+
                 assert!(gen2_status.sys.is_some());
                 let sys = gen2_status.sys.unwrap();
                 assert_eq!(sys.uptime, 3600);
-                
+
                 assert!(gen2_status.wifi.is_some());
                 let wifi = gen2_status.wifi.unwrap();
                 assert_eq!(wifi.sta_ip, Some("192.168.1.100".to_string()));
@@ -482,7 +499,7 @@ mod tests {
     #[tokio::test]
     async fn test_authentication() {
         let mock_server = MockServer::start().await;
-        
+
         Mock::given(method("GET"))
             .and(path("/rpc/Shelly.GetDeviceInfo"))
             .respond_with(ResponseTemplate::new(401))
@@ -494,7 +511,8 @@ mod tests {
             Duration::from_secs(5),
             None,
             ShellyGeneration::Gen2,
-        ).unwrap();
+        )
+        .unwrap();
 
         let result = client.get_device_info().await;
         assert!(result.is_err());
@@ -504,7 +522,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_gen1_status() {
         let mock_server = MockServer::start().await;
-        
+
         let status_response = r#"{
             "relays": [{
                 "ison": true,
@@ -543,26 +561,27 @@ mod tests {
             Duration::from_secs(5),
             None,
             ShellyGeneration::Gen1,
-        ).unwrap();
+        )
+        .unwrap();
 
         let status = client.get_status().await.unwrap();
-        
+
         match status {
             ShellyStatus::Gen1(gen1_status) => {
                 assert!(gen1_status.relays.is_some());
                 let relays = gen1_status.relays.unwrap();
                 assert_eq!(relays.len(), 1);
                 assert_eq!(relays[0].ison, true);
-                
+
                 assert!(gen1_status.meters.is_some());
                 let meters = gen1_status.meters.unwrap();
                 assert_eq!(meters.len(), 1);
                 assert_eq!(meters[0].power, 23.45);
                 assert_eq!(meters[0].total, 1234.56);
-                
+
                 assert_eq!(gen1_status.temperature, Some(25.5));
                 assert_eq!(gen1_status.uptime, Some(7200));
-                
+
                 assert!(gen1_status.wifi_sta.is_some());
                 let wifi = gen1_status.wifi_sta.unwrap();
                 assert_eq!(wifi.connected, true);
@@ -576,7 +595,7 @@ mod tests {
     #[tokio::test]
     async fn test_detect_generation() {
         let mock_server = MockServer::start().await;
-        
+
         // Mock Gen2 device
         Mock::given(method("GET"))
             .and(path("/rpc/Shelly.GetDeviceInfo"))
@@ -584,12 +603,11 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let generation = ShellyClient::detect_generation(
-            &mock_server.uri(),
-            Duration::from_secs(5),
-            None,
-        ).await.unwrap();
-        
+        let generation =
+            ShellyClient::detect_generation(&mock_server.uri(), Duration::from_secs(5), None)
+                .await
+                .unwrap();
+
         assert_eq!(generation, ShellyGeneration::Gen2);
     }
 }

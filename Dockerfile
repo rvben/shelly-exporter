@@ -19,28 +19,33 @@ RUN cargo build --release --target $(rustc -vV | sed -n 's/host: //p') && \
 # Runtime stage
 FROM alpine:3.21
 
+# OCI labels for GitHub Container Registry
+LABEL org.opencontainers.image.source=https://github.com/rvben/shelly-exporter
+LABEL org.opencontainers.image.description="Prometheus exporter for Shelly smart home devices"
+LABEL org.opencontainers.image.licenses=MIT
+
 # Install runtime dependencies
 RUN apk add --no-cache ca-certificates
 
 # Create non-root user
-RUN addgroup -g 1000 shelly && \
-    adduser -D -u 1000 -G shelly shelly
+RUN addgroup -g 1000 exporter && \
+    adduser -D -u 1000 -G exporter exporter
 
 # Copy the binary from builder
 COPY --from=builder /app/shelly-exporter /usr/local/bin/shelly-exporter
 
 # Change ownership
-RUN chown shelly:shelly /usr/local/bin/shelly-exporter
+RUN chown exporter:exporter /usr/local/bin/shelly-exporter
 
 # Switch to non-root user
-USER shelly
+USER exporter
 
 # Expose metrics port
 EXPOSE 9925
 
 # Set default environment variables
-ENV SHELLY_LOG_LEVEL=info
+ENV LOG_LEVEL=info
 ENV SHELLY_EXPORTER_BIND=0.0.0.0
-ENV SHELLY_EXPORTER_PORT=9925
+ENV METRICS_PORT=9925
 
 ENTRYPOINT ["/usr/local/bin/shelly-exporter"]

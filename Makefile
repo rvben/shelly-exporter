@@ -1,10 +1,10 @@
-.PHONY: help build test run clean docker-build docker-buildx docker-push docker-push-ghcr docker-run lint format check release all-checks dev-run gh-secrets coverage
+.PHONY: help build test run clean docker-build docker-buildx docker-push docker-push-ghcr docker-run lint format check build-release release all-checks dev-run gh-secrets coverage
 
 # Default target
 help:
 	@echo "Available targets:"
 	@echo "  make build        - Build the binary in debug mode"
-	@echo "  make release      - Build the binary in release mode"
+	@echo "  make build-release - Build the binary in release mode"
 	@echo "  make run          - Run the exporter"
 	@echo "  make test         - Run tests"
 	@echo "  make coverage     - Generate code coverage report"
@@ -18,6 +18,7 @@ help:
 	@echo "  make docker-push-ghcr - Build and push multi-arch to GitHub Container Registry"
 	@echo "  make docker-run   - Run Docker container"
 	@echo "  make dev-run      - Run with example hosts for development"
+	@echo "  make release      - Prepare and create a release (requires VERSION=v0.1.0)"
 	@echo "  make gh-secrets   - Set GitHub Actions secrets from .env file"
 
 # Build debug binary
@@ -25,7 +26,7 @@ build:
 	cargo build
 
 # Build release binary
-release:
+build-release:
 	cargo build --release
 
 # Run tests
@@ -107,6 +108,26 @@ format:
 check:
 	cargo fmt -- --check
 	cargo clippy -- -D warnings
+
+# Prepare a release
+release:
+	@if [ -z "$$VERSION" ]; then \
+		echo "Error: VERSION environment variable is required"; \
+		echo "Usage: VERSION=v0.1.0 make release"; \
+		exit 1; \
+	fi
+	@echo "Preparing release $$VERSION..."
+	@echo "1. Running checks..."
+	@make check
+	@echo "2. Updating Cargo.lock..."
+	@cargo update
+	@echo "3. Committing Cargo.lock..."
+	@git add Cargo.lock
+	@git commit -m "Update Cargo.lock for release $$VERSION" || echo "No changes to commit"
+	@echo "4. Creating and pushing tag..."
+	@git tag $$VERSION
+	@git push origin $$VERSION
+	@echo "Release $$VERSION created and pushed!"
 
 # Run all checks (format, lint, test)
 all-checks: check test

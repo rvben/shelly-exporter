@@ -1,20 +1,21 @@
 use anyhow::Result;
 use prometheus::{
-    Encoder, GaugeVec, IntGaugeVec, Registry, TextEncoder, register_gauge_vec, register_int_gauge_vec,
+    Encoder, GaugeVec, IntGaugeVec, Registry, TextEncoder, register_gauge_vec,
+    register_int_gauge_vec,
 };
 use tracing::{debug, error};
 
-use crate::shelly::{ShellyStatus, ShellyGen1Status, ShellyGen2Status};
+use crate::shelly::{ShellyGen1Status, ShellyGen2Status, ShellyStatus};
 
 pub struct Metrics {
     registry: Registry,
-    
+
     // Common metrics
     device_up: IntGaugeVec,
     device_uptime: IntGaugeVec,
     device_temperature: GaugeVec,
     wifi_rssi: IntGaugeVec,
-    
+
     // Power metrics
     switch_output: IntGaugeVec,
     switch_power_watts: GaugeVec,
@@ -23,13 +24,13 @@ pub struct Metrics {
     switch_power_factor: GaugeVec,
     switch_frequency_hz: GaugeVec,
     switch_energy_total_wh: GaugeVec,
-    
+
     // System metrics
     system_ram_free_bytes: IntGaugeVec,
     system_ram_total_bytes: IntGaugeVec,
     system_fs_free_bytes: IntGaugeVec,
     system_fs_total_bytes: IntGaugeVec,
-    
+
     // Update metrics
     device_update_available: IntGaugeVec,
 }
@@ -171,7 +172,14 @@ impl Metrics {
         })
     }
 
-    pub fn update_device(&self, device_name: &str, host: &str, model: &str, generation: &str, status: &ShellyStatus) -> Result<()> {
+    pub fn update_device(
+        &self,
+        device_name: &str,
+        host: &str,
+        model: &str,
+        generation: &str,
+        status: &ShellyStatus,
+    ) -> Result<()> {
         debug!("Updating metrics for device: {} ({})", device_name, host);
 
         // Device is up
@@ -180,14 +188,23 @@ impl Metrics {
             .set(1);
 
         match status {
-            ShellyStatus::Gen1(gen1_status) => self.update_gen1_metrics(device_name, host, gen1_status)?,
-            ShellyStatus::Gen2(gen2_status) => self.update_gen2_metrics(device_name, host, gen2_status)?,
+            ShellyStatus::Gen1(gen1_status) => {
+                self.update_gen1_metrics(device_name, host, gen1_status)?
+            }
+            ShellyStatus::Gen2(gen2_status) => {
+                self.update_gen2_metrics(device_name, host, gen2_status)?
+            }
         }
 
         Ok(())
     }
 
-    fn update_gen1_metrics(&self, device_name: &str, host: &str, status: &ShellyGen1Status) -> Result<()> {
+    fn update_gen1_metrics(
+        &self,
+        device_name: &str,
+        host: &str,
+        status: &ShellyGen1Status,
+    ) -> Result<()> {
         // Uptime
         if let Some(uptime) = status.uptime {
             self.device_uptime
@@ -264,7 +281,12 @@ impl Metrics {
         Ok(())
     }
 
-    fn update_gen2_metrics(&self, device_name: &str, host: &str, status: &ShellyGen2Status) -> Result<()> {
+    fn update_gen2_metrics(
+        &self,
+        device_name: &str,
+        host: &str,
+        status: &ShellyGen2Status,
+    ) -> Result<()> {
         // System metrics
         if let Some(sys) = &status.sys {
             self.device_uptime
@@ -388,7 +410,7 @@ impl Metrics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shelly::{SwitchStatus, SystemStatus, WifiStatus, Temperature, EnergyCounter};
+    use crate::shelly::{EnergyCounter, SwitchStatus, SystemStatus, Temperature, WifiStatus};
 
     #[test]
     fn test_gen2_metrics_update() {
@@ -400,7 +422,7 @@ mod tests {
                 return;
             }
         };
-        
+
         let status = ShellyGen2Status {
             switch_0: Some(SwitchStatus {
                 id: 0,
@@ -446,13 +468,15 @@ mod tests {
             }),
         };
 
-        metrics.update_device(
-            "test_device",
-            "192.168.1.100",
-            "Shelly Plus 1",
-            "gen2",
-            &ShellyStatus::Gen2(status),
-        ).unwrap();
+        metrics
+            .update_device(
+                "test_device",
+                "192.168.1.100",
+                "Shelly Plus 1",
+                "gen2",
+                &ShellyStatus::Gen2(status),
+            )
+            .unwrap();
 
         let output = metrics.gather().unwrap();
         assert!(output.contains("shelly_device_up"));
@@ -468,9 +492,9 @@ mod tests {
             Ok(m) => m,
             Err(_) => return,
         };
-        
+
         metrics.mark_device_down("test_device", "192.168.1.100", "Shelly Plus 1", "gen2");
-        
+
         let output = metrics.gather().unwrap();
         assert!(output.contains("shelly_device_up"));
         assert!(output.contains(r#"device="test_device""#));
