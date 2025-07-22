@@ -17,7 +17,7 @@ RUN cargo build --release --target $(rustc -vV | sed -n 's/host: //p') && \
     cp target/$(rustc -vV | sed -n 's/host: //p')/release/shelly-exporter /app/shelly-exporter
 
 # Runtime stage
-FROM alpine:3.21
+FROM alpine:3.22
 
 # OCI labels for GitHub Container Registry
 LABEL org.opencontainers.image.source=https://github.com/rvben/shelly-exporter
