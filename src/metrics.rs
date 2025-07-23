@@ -474,7 +474,7 @@ mod tests {
                 "192.168.1.100",
                 "Shelly Plus 1",
                 "gen2",
-                &ShellyStatus::Gen2(status),
+                &ShellyStatus::Gen2(Box::new(status)),
             )
             .unwrap();
 
