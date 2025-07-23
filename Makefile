@@ -119,12 +119,16 @@ release:
 	@echo "Preparing release $$VERSION..."
 	@echo "1. Running checks..."
 	@make check
-	@echo "2. Updating Cargo.lock..."
+	@echo "2. Updating version in Cargo.toml..."
+	@VERSION_NUM=$$(echo $$VERSION | sed 's/^v//') && \
+		sed -i.bak "s/^version = \".*\"/version = \"$$VERSION_NUM\"/" Cargo.toml && \
+		rm Cargo.toml.bak
+	@echo "3. Updating Cargo.lock..."
 	@cargo update
-	@echo "3. Committing Cargo.lock..."
-	@git add Cargo.lock
-	@git commit -m "Update Cargo.lock for release $$VERSION" || echo "No changes to commit"
-	@echo "4. Creating and pushing tag..."
+	@echo "4. Committing version changes..."
+	@git add Cargo.toml Cargo.lock
+	@git commit -m "chore: bump version to $$VERSION" || echo "No changes to commit"
+	@echo "5. Creating and pushing tag..."
 	@git tag $$VERSION
 	@git push origin $$VERSION
 	@echo "Release $$VERSION created and pushed!"
