@@ -1,6 +1,6 @@
 [package]
 name = "shelly-exporter"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 authors = ["Ruben J. Jongejan <ruben.jongejan@gmail.com>"]
 description = "Prometheus exporter for Shelly smart home devices"

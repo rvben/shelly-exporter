@@ -7,9 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2025-01-23
+
 ### Added
 - Dependabot configuration for automated dependency updates
 - Enhanced Cargo.toml metadata for better crates.io discoverability
+
+### Fixed
+- Musl toolchain installation in release workflow for binary builds
+- Test failures with enum boxing
+- GitHub release creation with proper binary artifacts
 
 ## [0.1.0] - 2025-01-22
 
