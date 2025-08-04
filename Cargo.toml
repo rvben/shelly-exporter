@@ -15,7 +15,7 @@ exclude = ["target/", ".github/", "*.md"]
 
 [dependencies]
 # Async runtime
-tokio = { version = "1.45", features = ["full"] }
+tokio = { version = "1.47", features = ["full"] }
 
 # Web framework for metrics endpoint
 axum = "0.8"
