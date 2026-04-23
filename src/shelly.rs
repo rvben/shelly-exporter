@@ -171,27 +171,6 @@ pub struct DeviceInfo {
     pub auth_domain: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-struct RpcRequest {
-    id: i32,
-    method: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    params: Option<serde_json::Value>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct RpcResponse<T> {
-    id: i32,
-    result: Option<T>,
-    error: Option<RpcError>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct RpcError {
-    code: i32,
-    message: String,
-}
-
 impl ShellyClient {
     pub fn new(
         base_url: String,
