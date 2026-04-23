@@ -209,11 +209,11 @@ impl ShellyClient {
             request = request.basic_auth(username, Some(password));
         }
 
-        if let Ok(response) = request.send().await {
-            if response.status().is_success() {
-                info!("Detected Gen2 device at {}", base_url);
-                return Ok(ShellyGeneration::Gen2);
-            }
+        if let Ok(response) = request.send().await
+            && response.status().is_success()
+        {
+            info!("Detected Gen2 device at {}", base_url);
+            return Ok(ShellyGeneration::Gen2);
         }
 
         // Try Gen1 endpoint
@@ -224,11 +224,11 @@ impl ShellyClient {
             request = request.basic_auth(username, Some(password));
         }
 
-        if let Ok(response) = request.send().await {
-            if response.status().is_success() {
-                info!("Detected Gen1 device at {}", base_url);
-                return Ok(ShellyGeneration::Gen1);
-            }
+        if let Ok(response) = request.send().await
+            && response.status().is_success()
+        {
+            info!("Detected Gen1 device at {}", base_url);
+            return Ok(ShellyGeneration::Gen1);
         }
 
         Err(anyhow!(
@@ -458,7 +458,7 @@ mod tests {
             ShellyStatus::Gen2(gen2_status) => {
                 assert!(gen2_status.switch_0.is_some());
                 let switch = gen2_status.switch_0.unwrap();
-                assert_eq!(switch.output, true);
+                assert!(switch.output);
                 assert_eq!(switch.apower, Some(15.5));
                 assert_eq!(switch.voltage, Some(230.1));
 
@@ -550,7 +550,7 @@ mod tests {
                 assert!(gen1_status.relays.is_some());
                 let relays = gen1_status.relays.unwrap();
                 assert_eq!(relays.len(), 1);
-                assert_eq!(relays[0].ison, true);
+                assert!(relays[0].ison);
 
                 assert!(gen1_status.meters.is_some());
                 let meters = gen1_status.meters.unwrap();
@@ -563,7 +563,7 @@ mod tests {
 
                 assert!(gen1_status.wifi_sta.is_some());
                 let wifi = gen1_status.wifi_sta.unwrap();
-                assert_eq!(wifi.connected, true);
+                assert!(wifi.connected);
                 assert_eq!(wifi.ip, Some("192.168.1.101".to_string()));
                 assert_eq!(wifi.rssi, -60);
             }

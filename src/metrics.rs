@@ -269,13 +269,13 @@ impl Metrics {
         }
 
         // Updates
-        if let Some(update) = &status.update {
-            if update.has_update {
-                let new_version = update.new_version.as_deref().unwrap_or("unknown");
-                self.device_update_available
-                    .with_label_values(&[device_name, host, &update.old_version, new_version])
-                    .set(1);
-            }
+        if let Some(update) = &status.update
+            && update.has_update
+        {
+            let new_version = update.new_version.as_deref().unwrap_or("unknown");
+            self.device_update_available
+                .with_label_values(&[device_name, host, &update.old_version, new_version])
+                .set(1);
         }
 
         Ok(())
@@ -308,22 +308,22 @@ impl Metrics {
                 .set(sys.fs_free);
 
             // Check for updates
-            if let Some(updates) = &sys.available_updates {
-                if let Some(stable) = &updates.stable {
-                    self.device_update_available
-                        .with_label_values(&[device_name, host, "current", &stable.version])
-                        .set(1);
-                }
+            if let Some(updates) = &sys.available_updates
+                && let Some(stable) = &updates.stable
+            {
+                self.device_update_available
+                    .with_label_values(&[device_name, host, "current", &stable.version])
+                    .set(1);
             }
         }
 
         // WiFi
-        if let Some(wifi) = &status.wifi {
-            if let (Some(ssid), Some(rssi)) = (&wifi.ssid, wifi.rssi) {
-                self.wifi_rssi
-                    .with_label_values(&[device_name, host, ssid])
-                    .set(rssi as i64);
-            }
+        if let Some(wifi) = &status.wifi
+            && let (Some(ssid), Some(rssi)) = (&wifi.ssid, wifi.rssi)
+        {
+            self.wifi_rssi
+                .with_label_values(&[device_name, host, ssid])
+                .set(rssi as i64);
         }
 
         // Process switches
@@ -341,12 +341,12 @@ impl Metrics {
                     .set(if switch.output { 1 } else { 0 });
 
                 // Temperature
-                if let Some(temp) = &switch.temperature {
-                    if let Some(t_c) = temp.t_c {
-                        self.device_temperature
-                            .with_label_values(&[device_name, host])
-                            .set(t_c);
-                    }
+                if let Some(temp) = &switch.temperature
+                    && let Some(t_c) = temp.t_c
+                {
+                    self.device_temperature
+                        .with_label_values(&[device_name, host])
+                        .set(t_c);
                 }
 
                 // Power metrics
