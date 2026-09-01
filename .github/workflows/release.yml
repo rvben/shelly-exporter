@@ -33,6 +33,11 @@ jobs:
   publish-crate:
     runs-on: ubuntu-latest
     needs: test
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
     steps:
     - uses: actions/checkout@v4
     
@@ -41,10 +46,15 @@ jobs:
       with:
         toolchain: stable
     
+    - name: Authenticate to crates.io via Trusted Publishing
+      id: crates_io_auth
+      # v1.0.5
+      uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18
+
     - name: Publish to crates.io
-      run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+      run: cargo publish
       env:
-        CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+        CARGO_REGISTRY_TOKEN: ${{ steps.crates_io_auth.outputs.token }}
 
   docker:
     runs-on: ubuntu-latest

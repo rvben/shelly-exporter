@@ -153,6 +153,5 @@ gh-secrets:
 	@echo "Setting GitHub Actions secrets from .env file..."
 	@export $$(cat .env | grep -v '^#' | xargs) && \
 		gh secret set DOCKER_USERNAME --body "$$DOCKER_USERNAME" && \
-		gh secret set DOCKER_PASSWORD --body "$$DOCKER_PASSWORD" && \
-		gh secret set CRATES_IO_TOKEN --body "$$CRATES_IO_TOKEN"
+		gh secret set DOCKER_PASSWORD --body "$$DOCKER_PASSWORD"
 	@echo "GitHub Actions secrets have been set successfully!"
