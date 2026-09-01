@@ -16,7 +16,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -39,7 +39,7 @@ jobs:
       id-token: write
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -111,7 +111,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, publish-crate, docker]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
