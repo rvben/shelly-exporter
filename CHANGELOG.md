@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1](https://github.com/rvben/shelly-exporter/compare/v0.2.0...v0.2.1) - 2026-09-27
+
+### Fixed
+
+- **deps**: update rustls to 0.23.45 for RUSTSEC-2026-0285 ([86bed33](https://github.com/rvben/shelly-exporter/commit/86bed331ff2fb6b78c4dcd46ca4046ccc5d2e4f1))
+
 ## [0.1.3] - 2025-01-23
 
 ### Added
