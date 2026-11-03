@@ -118,7 +118,7 @@ release:
 	fi
 	@echo "Preparing release $$VERSION..."
 	@echo "1. Running checks..."
-	@make check
+	@$(MAKE) check
 	@echo "2. Updating version in Cargo.toml..."
 	@VERSION_NUM=$$(echo $$VERSION | sed 's/^v//') && \
 		sed -i.bak "s/^version = \".*\"/version = \"$$VERSION_NUM\"/" Cargo.toml && \
